@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require("dotenv");
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
 // Middleware para parsear JSON en las solicitudes
 app.use(express.json());
