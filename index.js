@@ -21,7 +21,7 @@ async function buscarProductos(req, res) {
   }
 
   if (apiKey !== api_key) {
-    return res.status(401).json({ message: "Api key incorrecta" });
+    return res.status(401).json({ message: "Api key incorrecta" , apiKey});
   }
 
   if (!query) {
