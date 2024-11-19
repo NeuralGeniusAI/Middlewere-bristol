@@ -20,8 +20,8 @@ async function buscarProductos(req, res) {
     return res.status(401).json({ message: "Api key no proporcionada" });
   }
 
-  if (apiKey !== api_key) {
-    console.log({apiKey, api_key});
+  if (api_key !== apiKey) {
+    console.log({api_key, apiKey});
     
     return res.status(401).json({ message: "Api key incorrecta" , apiKey});
   }
