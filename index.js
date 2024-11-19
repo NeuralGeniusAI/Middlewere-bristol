@@ -88,5 +88,5 @@ app.post("/buscarProductos", buscarProductos);
 
 // Inicia el servidor
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:3000`);
+  console.log(`Servidor activo`);
 });
