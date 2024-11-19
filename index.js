@@ -14,8 +14,6 @@ async function buscarProductos(req, res) {
   const api_key = process.env.API_KEY;
   const token = process.env.TOKEN;
 
-  console.log(apiKey, api_key);
-
   if (!apiKey) {
     return res.status(401).json({ message: "Api key no proporcionada" });
   }
@@ -81,8 +79,6 @@ async function buscarProductos(req, res) {
 
     return filteredData;
   });
-
-  console.log(filteredData);
 
   res.json({ filteredData });
 }
