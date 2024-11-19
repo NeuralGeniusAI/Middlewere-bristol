@@ -45,40 +45,18 @@ async function buscarProductos(req, res) {
 
   const { data } = await response.json();
 
-  const filteredData = data.map((item) => {
-    //   {
-    //     id: 8958,
-    //     codigo: 'BS8958',
-    //     nombre: 'Celular Iphone 13 256GB Azul',
-    //     descripcion: '',
-    //     codigobarra: 'BS8958',
-    //     precio: 7401000,
-    //     existencia: 0,
-    //     categoria: 'Celulares',
-    //     color: '',
-    //     modelo: '',
-    //     marca: 'APPLE',
-    //     imagen: null,
-    //     condiciones: [Array],
-    //     promociones: [Array],
-    //     existenciasdeposito: []
-    //   },
-
-    const {
-      codigo,
-      codigobarra,
-      categoria,
-      color,
-      modelo,
-      marca,
-      condiciones,
-      promociones,
-      existenciasdeposito,
-      ...filteredData
-    } = item;
-
-    return filteredData;
-  });
+      // Limitar el número de resultados
+      const maxResults = 12;
+      const filteredData = [];
+      for (const item of data) {
+        if (filteredData.length >= maxResults) break;
+        const { 
+          codigo, codigobarra, categoria, color, modelo, 
+          marca, condiciones, promociones, existenciasdeposito, 
+          ...rest 
+        } = item;
+        filteredData.push(rest);
+      }
 
   res.json({ filteredData });
 }
