@@ -16,9 +16,22 @@ async function buscarProductos(req, res) {
 
   console.log(apiKey, api_key);
 
-  if (!apiKey || apiKey !== api_key) {
-    return res.status(401).json({ message: "No autorizado" });
+  if (!apiKey) {
+    return res.status(401).json({ message: "Api key no proporcionada" });
   }
+
+  if (apiKey !== api_key) {
+    return res.status(401).json({ message: "Api key incorrecta" });
+  }
+
+  if (!query) {
+    return res.status(400).json({ message: "Query no proporcionada" });
+  } 
+
+  if (!token) {
+    return res.status(401).json({ message: "Token no proporcionado" });
+  }
+
 
   const options = {
     method: "POST",
