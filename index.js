@@ -1,5 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const nodemailer = require("nodemailer");
+const obtenerCoordenadas = require("./obtenerCoordenadas");
 const app = express();
 const PORT = 3000;
 
@@ -14,55 +16,191 @@ async function buscarProductos(req, res) {
   const api_key = process.env.API_KEY;
   const token = process.env.TOKEN;
 
-  if (!apiKey) {
-    return res.status(401).json({ message: "Api key no proporcionada" });
-  }
+  try {
+    // Validación de API Key
+    if (!apiKey) {
+      return res.status(401).json({ message: "Api key no proporcionada" });
+    }
 
-  if (api_key !== apiKey) {
-    console.log({api_key, apiKey});
+    if (api_key !== apiKey) {
+      console.log({ api_key, apiKey });
+      return res.status(401).json({ message: "Api key incorrecta", apiKey });
+    }
+
+    // Validación de query
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+      return res.status(400).json({ message: "Query no proporcionada o no válida" });
+    }
+
+    // Validación de token
+    if (!token) {
+      return res.status(500).json({ message: "Token no configurado en el servidor" });
+    }
+
+    const options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, q: query }),
+    };
+
+    // Realizar solicitud a la API externa
+    const response = await fetch(
+      "https://secure.bristol.com.py:9091/ws_comercial/?buscararticulos",
+      options
+    );
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        message: "Error en la API externa",
+        status: response.status,
+      });
+    }
+
+    const { data } = await response.json();
+
+    // Limitar el número de resultados
+    const maxResults = 12;
+    const filteredData = [];
+    for (const item of data) {
+      if (filteredData.length >= maxResults) break;
+
+      const {
+        codigo,
+        categoria,
+        color,
+        modelo,
+        marca,
+        condiciones,
+        promociones,
+        existenciasdeposito,
+        ...rest
+      } = item;
+
+      filteredData.push(rest);
+    }
+
+    // Respuesta exitosa
+    res.json({ filteredData });
+  } catch (error) {
+    // Manejo de errores
+    console.error("Error en buscarProductos:", error.message);
+
+    if (error.name === "FetchError") {
+      return res.status(504).json({ message: "Error al conectar con la API externa" });
+    }
+
+    res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message,
+    });
+  }
+}
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "facundolizardotrabajosia@gmail.com", // Tu correo electrónico
+    pass: process.env.GOOGLE_PASSWORD, // Contraseña de aplicación generada en Google
+  },
+});
+
+async function enviarEmailConDatosDeCompra(req, res) {
+  const {
+    nombre,
+    documento,
+    tipoDeDocumento,
+    productos,
+    entrega,
+    direccion,
+    ciudad,
+    codigoSucursal,
+    nombreSucursal,
+    apiKey,
+  } = req.body;
+  const api_key = process.env.API_KEY;
+
+  try {
+    if (!apiKey) {
+      return res.status(401).json({ message: "Api key no proporcionada" });
+    }
+
+    if (api_key !== apiKey) {
+      console.log({ api_key, apiKey });
+
+      return res.status(401).json({ message: "Api key incorrecta", apiKey });
+    }
+
+    if (
+      !nombre ||
+      !documento ||
+      !tipoDeDocumento ||
+      !productos ||
+      !entrega ||
+      !direccion ||
+      !ciudad ||
+      !codigoSucursal ||
+      !nombreSucursal
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son obligatorios" });
+    }
+
+    const coordenadas = await obtenerCoordenadas(direccion, ciudad);
+
+    const mailOptions = {
+      from: "facundolizardotrabajosia@gmail.com", // Correo del remitente
+      // to: 'victor.barreto@bristol.com.py',
+      to: "facundolizardo75@gmail.com",
+      subject: "Correo de test del agente de ventas",
+      text: `Hola, este es un correo enviado para testear el agente de ventas.
+      Informacion de la compra: 
+      - Cliente
+      Nombre: ${nombre}
+      tipoDeDocumento: ${tipoDeDocumento} 
+      documento: ${documento} 
+
+      - Productos
+      ${productos
+        .map((producto, index) => {
+          const number = index + 1;
+          return `
+      ${number}. Nombre: ${producto.nombre}
+        codigobarra: ${producto.codigobarra} 
+        Cantidad: ${producto.cantidad}
+        Importe: ${producto.importe}
+        Tipo de pago: Credito (18 cuotas de ${(producto.importe / 18).toFixed(2)})
+      `;
+        })
+        .join('')}
     
-    return res.status(401).json({ message: "Api key incorrecta" , apiKey});
+      - Datos de entrega o retiro
+      Tipo de entrega: ${entrega}
+      Sucursal: 
+       * Codigo de sucursal: ${codigoSucursal}
+       * Nombre de sucursal: ${nombreSucursal}
+      Direccion del cliente: ${direccion}, ${ciudad}, Paraguay
+      Ubicacion:
+       * Latitud: ${coordenadas.lat}
+       * Longitud: ${coordenadas.lon}
+      `,
+    };
+
+    // Enviar correo
+    const info = await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Correo enviado con éxito", info });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({ message: "Error al enviar el correo", error });
   }
-
-  if (!query) {
-    return res.status(400).json({ message: "Query no proporcionada" });
-  } 
-
-  if (!token) {
-    return res.status(401).json({ message: "Token no proporcionado" });
-  }
-
-
-  const options = {
-    method: "POST",
-    body: JSON.stringify({ token, q: query }),
-  };
-
-  const response = await fetch(
-    "https://secure.bristol.com.py:9091/ws_comercial/?buscararticulos",
-    options
-  );
-
-  const { data } = await response.json();
-
-      // Limitar el número de resultados
-      const maxResults = 12;
-      const filteredData = [];
-      for (const item of data) {
-        if (filteredData.length >= maxResults) break;
-        const { 
-          codigo, codigobarra, categoria, color, modelo, 
-          marca, condiciones, promociones, existenciasdeposito, 
-          ...rest 
-        } = item;
-        filteredData.push(rest);
-      }
-
-  res.json({ filteredData });
 }
 
 // Ruta principal
 app.post("/buscarProductos", buscarProductos);
+app.post("/enviarEmail", enviarEmailConDatosDeCompra);
 
 // Inicia el servidor
 app.listen(PORT, () => {
