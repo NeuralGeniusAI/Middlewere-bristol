@@ -166,23 +166,23 @@ async function enviarEmailConDatosDeCompra(req, res) {
         .json({ message: "Todos los campos son obligatorios" });
     }
 
-       // Convertir el string de productos en un array
-       let arrayProductos;
-       try {
-         arrayProductos = JSON.parse(productos);
-       } catch (error) {
-         return res.status(400).json({
-           message: "El campo productos no tiene un formato JSON válido",
-           error: error.message,
-         });
-       }
-   
-       // Verificar que productos sea un array
-       if (!Array.isArray(arrayProductos)) {
-         return res
-           .status(400)
-           .json({ message: "El campo productos debe ser un array válido" });
-       }
+    // Limpiar el string de productos eliminando escapes adicionales
+    let arrayProductos;
+    try {
+      const cleanedProductos = productos.replace(/\\\\/g, '\\'); // Elimina \\ adicionales
+      arrayProductos = JSON.parse(cleanedProductos); // Parsear el string limpio
+    } catch (error) {
+      return res.status(400).json({
+        message: "El campo productos no tiene un formato JSON válido",
+        error: error.message,
+      });
+    }
+
+    if (!Array.isArray(arrayProductos)) {
+      return res
+        .status(400)
+        .json({ message: "El campo productos debe ser un array válido" });
+    }
 
     const coordenadas = await obtenerCoordenadas(direccion, ciudad);
 
