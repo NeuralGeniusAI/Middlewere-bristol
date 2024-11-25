@@ -69,12 +69,12 @@ async function buscarProductos(req, res) {
       if (filteredData.length >= maxResults) break;
 
       const {
+        id,
         codigo,
         categoria,
         color,
         modelo,
         marca,
-        //condiciones,
         promociones,
         existenciasdeposito,
         ...rest
