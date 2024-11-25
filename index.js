@@ -206,8 +206,8 @@ async function enviarEmailConDatosDeCompra(req, res) {
       ${number}. Nombre: ${producto.nombre}
         codigobarra: ${producto.codigobarra} 
         Cantidad: ${producto.cantidad}
-        Importe: ${producto.importe}
-        Tipo de pago: Credito (18 cuotas de ${(producto.importe / 18).toFixed(
+        Precio: ${producto.precio}
+        Tipo de pago: Credito (18 cuotas de ${(producto.precio / 18).toFixed(
           2
         )})
       `;
