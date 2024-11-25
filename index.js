@@ -29,12 +29,16 @@ async function buscarProductos(req, res) {
 
     // Validación de query
     if (!query || typeof query !== "string" || query.trim().length === 0) {
-      return res.status(400).json({ message: "Query no proporcionada o no válida" });
+      return res
+        .status(400)
+        .json({ message: "Query no proporcionada o no válida" });
     }
 
     // Validación de token
     if (!token) {
-      return res.status(500).json({ message: "Token no configurado en el servidor" });
+      return res
+        .status(500)
+        .json({ message: "Token no configurado en el servidor" });
     }
 
     const options = {
@@ -70,13 +74,27 @@ async function buscarProductos(req, res) {
         color,
         modelo,
         marca,
-        condiciones,
+        //condiciones,
         promociones,
         existenciasdeposito,
         ...rest
       } = item;
 
-      filteredData.push(rest);
+      const filteredCondiciones = rest.condiciones.map(
+        ({
+          deposito,
+          idlistaprecio,
+          visible,
+          idcomercialplazo,
+          alcance,
+          mediopago,
+          calificacion,
+          idpromocion, 
+          ...restCondicion
+        }) => restCondicion
+      );
+
+      filteredData.push({ ...rest, condiciones: filteredCondiciones });
     }
 
     // Respuesta exitosa
@@ -86,7 +104,9 @@ async function buscarProductos(req, res) {
     console.error("Error en buscarProductos:", error.message);
 
     if (error.name === "FetchError") {
-      return res.status(504).json({ message: "Error al conectar con la API externa" });
+      return res
+        .status(504)
+        .json({ message: "Error al conectar con la API externa" });
     }
 
     res.status(500).json({
@@ -95,7 +115,6 @@ async function buscarProductos(req, res) {
     });
   }
 }
-
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -147,6 +166,24 @@ async function enviarEmailConDatosDeCompra(req, res) {
         .json({ message: "Todos los campos son obligatorios" });
     }
 
+       // Convertir el string de productos en un array
+       let arrayProductos;
+       try {
+         arrayProductos = JSON.parse(productos);
+       } catch (error) {
+         return res.status(400).json({
+           message: "El campo productos no tiene un formato JSON válido",
+           error: error.message,
+         });
+       }
+   
+       // Verificar que productos sea un array
+       if (!Array.isArray(arrayProductos)) {
+         return res
+           .status(400)
+           .json({ message: "El campo productos debe ser un array válido" });
+       }
+
     const coordenadas = await obtenerCoordenadas(direccion, ciudad);
 
     const mailOptions = {
@@ -162,7 +199,7 @@ async function enviarEmailConDatosDeCompra(req, res) {
       documento: ${documento} 
 
       - Productos
-      ${productos
+      ${arrayProductos
         .map((producto, index) => {
           const number = index + 1;
           return `
@@ -170,10 +207,12 @@ async function enviarEmailConDatosDeCompra(req, res) {
         codigobarra: ${producto.codigobarra} 
         Cantidad: ${producto.cantidad}
         Importe: ${producto.importe}
-        Tipo de pago: Credito (18 cuotas de ${(producto.importe / 18).toFixed(2)})
+        Tipo de pago: Credito (18 cuotas de ${(producto.importe / 18).toFixed(
+          2
+        )})
       `;
         })
-        .join('')}
+        .join("")}
     
       - Datos de entrega o retiro
       Tipo de entrega: ${entrega}
