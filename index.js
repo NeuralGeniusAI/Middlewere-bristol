@@ -132,11 +132,11 @@ async function enviarEmailConDatosDeCompra(req, res) {
     productos,
     entrega,
     direccion,
-    ciudad,
     codigoSucursal,
     nombreSucursal,
     apiKey,
   } = req.body;
+
   const api_key = process.env.API_KEY;
 
   try {
@@ -146,30 +146,32 @@ async function enviarEmailConDatosDeCompra(req, res) {
 
     if (api_key !== apiKey) {
       console.log({ api_key, apiKey });
-
       return res.status(401).json({ message: "Api key incorrecta", apiKey });
     }
 
-    if (
-      !nombre ||
-      !documento ||
-      !tipoDeDocumento ||
-      !productos ||
-      !entrega ||
-      !direccion ||
-      !ciudad ||
-      !codigoSucursal ||
-      !nombreSucursal
-    ) {
+    if (!nombre || !documento || !tipoDeDocumento || !productos || !entrega) {
       return res
         .status(400)
-        .json({ message: "Todos los campos son obligatorios" });
+        .json({ message: "Los campos nombre, documento, tipoDeDocumento, productos y entrega son obligatorios" });
+    }
+
+    // Validar campos según el tipo de entrega
+    if (entrega === "1" && !direccion) {
+      return res
+        .status(400)
+        .json({ message: "El campo direccion es obligatorio para el tipo de entrega 1" });
+    }
+
+    if (entrega === "2" && (!codigoSucursal || !nombreSucursal)) {
+      return res
+        .status(400)
+        .json({ message: "Los campos codigoSucursal y nombreSucursal son obligatorios para el tipo de entrega 2" });
     }
 
     // Limpiar el string de productos eliminando escapes adicionales
     let arrayProductos;
     try {
-      const cleanedProductos = productos.replace(/\\\\/g, '\\'); // Elimina \\ adicionales
+      const cleanedProductos = productos.replace(/\\\\/g, "\\"); // Elimina \\ adicionales
       arrayProductos = JSON.parse(cleanedProductos); // Parsear el string limpio
     } catch (error) {
       return res.status(400).json({
@@ -184,11 +186,10 @@ async function enviarEmailConDatosDeCompra(req, res) {
         .json({ message: "El campo productos debe ser un array válido" });
     }
 
-    const coordenadas = await obtenerCoordenadas(direccion, ciudad);
+    const coordenadas = entrega === "1" ? await obtenerCoordenadas(direccion, "Paraguay") : null;
 
     const mailOptions = {
-      from: "facundolizardotrabajosia@gmail.com", // Correo del remitente
-      // to: 'victor.barreto@bristol.com.py',
+      from: "facundolizardotrabajosia@gmail.com",
       to: "facundolizardo75@gmail.com",
       subject: "Correo de test del agente de ventas",
       text: `Hola, este es un correo enviado para testear el agente de ventas.
@@ -216,13 +217,16 @@ async function enviarEmailConDatosDeCompra(req, res) {
     
       - Datos de entrega o retiro
       Tipo de entrega: ${entrega}
-      Sucursal: 
-       * Codigo de sucursal: ${codigoSucursal}
-       * Nombre de sucursal: ${nombreSucursal}
-      Direccion del cliente: ${direccion}, ${ciudad}, Paraguay
+      ${
+        entrega === "1"
+          ? `Direccion del cliente: ${direccion}, Paraguay
       Ubicacion:
        * Latitud: ${coordenadas.lat}
-       * Longitud: ${coordenadas.lon}
+       * Longitud: ${coordenadas.lon}`
+          : `Sucursal: 
+       * Codigo de sucursal: ${codigoSucursal}
+       * Nombre de sucursal: ${nombreSucursal}`
+      }
       `,
     };
 
@@ -232,10 +236,10 @@ async function enviarEmailConDatosDeCompra(req, res) {
     res.status(200).json({ message: "Correo enviado con éxito", info });
   } catch (error) {
     console.log(error);
-
     res.status(500).json({ message: "Error al enviar el correo", error });
   }
 }
+
 
 // Ruta principal
 app.post("/buscarProductos", buscarProductos);

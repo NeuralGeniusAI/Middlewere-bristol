@@ -1,10 +1,10 @@
-async function obtenerCoordenadas(direccion, ciudad) {
+async function obtenerCoordenadas(direccion) {
   console.log("obtenerCoordenadas veover");
   
   try {
     // Completar la URL
     const pais = 'Paraguay';
-    const url = `https://nominatim.openstreetmap.org/search?q=${direccion},${ciudad},Paraguay,&format=json`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${direccion},Paraguay,&format=json`;
 
     // Realizar la petición GET
     const response = await fetch(url);
