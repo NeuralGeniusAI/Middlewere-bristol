@@ -89,7 +89,7 @@ async function buscarProductos(req, res) {
           alcance,
           mediopago,
           calificacion,
-          idpromocion, 
+          idpromocion,
           ...restCondicion
         }) => restCondicion
       );
@@ -150,22 +150,24 @@ async function enviarEmailConDatosDeCompra(req, res) {
     }
 
     if (!nombre || !documento || !tipoDeDocumento || !productos || !entrega) {
-      return res
-        .status(400)
-        .json({ message: "Los campos nombre, documento, tipoDeDocumento, productos y entrega son obligatorios" });
+      return res.status(400).json({
+        message:
+          "Los campos nombre, documento, tipoDeDocumento, productos y entrega son obligatorios",
+      });
     }
 
     // Validar campos según el tipo de entrega
     if (entrega === "1" && (!codigoSucursal || !nombreSucursal)) {
-      return res
-        .status(400)
-        .json({ message: "Los campos codigoSucursal y nombreSucursal son obligatorios para el tipo de entrega 2" });
+      return res.status(400).json({
+        message:
+          "Los campos codigoSucursal y nombreSucursal son obligatorios para el tipo de entrega 2",
+      });
     }
 
     if (entrega === "2" && !direccion) {
-      return res
-        .status(400)
-        .json({ message: "El campo direccion es obligatorio para el tipo de entrega 1" });
+      return res.status(400).json({
+        message: "El campo direccion es obligatorio para el tipo de entrega 1",
+      });
     }
 
     // Limpiar el string de productos eliminando escapes adicionales
@@ -186,7 +188,7 @@ async function enviarEmailConDatosDeCompra(req, res) {
         .json({ message: "El campo productos debe ser un array válido" });
     }
 
-    const coordenadas = entrega === "1" ? await obtenerCoordenadas(direccion, "Paraguay") : null;
+    const coordenadas = entrega === "2" ? await obtenerCoordenadas(direccion, "Paraguay") : null;
 
     const mailOptions = {
       from: "facundolizardotrabajosia@gmail.com",
@@ -219,13 +221,13 @@ async function enviarEmailConDatosDeCompra(req, res) {
       Tipo de entrega: ${entrega}
       ${
         entrega === "1"
-          ? `Direccion del cliente: ${direccion}, Paraguay
+          ? `Sucursal: 
+       * Codigo de sucursal: ${codigoSucursal}
+       * Nombre de sucursal: ${nombreSucursal}`
+          : `Direccion del cliente: ${direccion}, Paraguay
       Ubicacion:
        * Latitud: ${coordenadas.lat}
        * Longitud: ${coordenadas.lon}`
-          : `Sucursal: 
-       * Codigo de sucursal: ${codigoSucursal}
-       * Nombre de sucursal: ${nombreSucursal}`
       }
       `,
     };
@@ -239,7 +241,6 @@ async function enviarEmailConDatosDeCompra(req, res) {
     res.status(500).json({ message: "Error al enviar el correo", error });
   }
 }
-
 
 // Ruta principal
 app.post("/buscarProductos", buscarProductos);
