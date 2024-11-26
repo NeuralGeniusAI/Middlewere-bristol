@@ -192,7 +192,7 @@ async function enviarEmailConDatosDeCompra(req, res) {
 
     const mailOptions = {
       from: "facundolizardotrabajosia@gmail.com",
-      to: "facundolizardo75@gmail.com",
+      to: "facundolizardo75@gmail.com,victor.barreto@bristol.com.py",
       subject: "Correo de test del agente de ventas",
       text: `Hola, este es un correo enviado para testear el agente de ventas.
       Informacion de la compra: 
