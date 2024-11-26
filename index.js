@@ -156,16 +156,16 @@ async function enviarEmailConDatosDeCompra(req, res) {
     }
 
     // Validar campos según el tipo de entrega
-    if (entrega === "1" && !direccion) {
-      return res
-        .status(400)
-        .json({ message: "El campo direccion es obligatorio para el tipo de entrega 1" });
-    }
-
-    if (entrega === "2" && (!codigoSucursal || !nombreSucursal)) {
+    if (entrega === "1" && (!codigoSucursal || !nombreSucursal)) {
       return res
         .status(400)
         .json({ message: "Los campos codigoSucursal y nombreSucursal son obligatorios para el tipo de entrega 2" });
+    }
+
+    if (entrega === "2" && !direccion) {
+      return res
+        .status(400)
+        .json({ message: "El campo direccion es obligatorio para el tipo de entrega 1" });
     }
 
     // Limpiar el string de productos eliminando escapes adicionales
