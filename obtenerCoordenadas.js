@@ -1,5 +1,4 @@
 async function obtenerCoordenadas(direccion) {
-  console.log("obtenerCoordenadas veover");
   
   try {
     // Completar la URL
@@ -25,8 +24,10 @@ async function obtenerCoordenadas(direccion) {
     const { lat, lon } = data[0];
     return { lat, lon };
   } catch (error) {
-    console.error(error);
-    throw error; // Re-lanzar el error para manejarlo en la llamada de la función
+    
+    console.error(error.message); // Asegúrate de registrar el mensaje del error
+    throw new Error(error.message); // Re-lanzar el error con el mensaje explícito
+
   }
 }
 

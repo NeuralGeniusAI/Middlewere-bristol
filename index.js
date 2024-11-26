@@ -188,7 +188,17 @@ async function enviarEmailConDatosDeCompra(req, res) {
         .json({ message: "El campo productos debe ser un array válido" });
     }
 
-    const coordenadas = entrega === "2" ? await obtenerCoordenadas(direccion, "Paraguay") : null;
+    let coordenadas = null;
+    try {
+      if (entrega === "2") {
+        coordenadas = await obtenerCoordenadas(direccion, "Paraguay");
+      }
+    } catch (error) {
+      if (error.message === "No se encontraron resultados para la dirección proporcionada.") {
+        return res.status(200).json({ message: error.message, error });
+      }
+      throw error; 
+    }
 
     const mailOptions = {
       from: "facundolizardotrabajosia@gmail.com",
@@ -237,8 +247,14 @@ async function enviarEmailConDatosDeCompra(req, res) {
 
     res.status(200).json({ message: "Correo enviado con éxito", info });
   } catch (error) {
+
     console.log(error);
+    if (error ==='No se encontraron resultados para la dirección proporcionada.') {
+      res.status(500).json({ message:error});
+    }
+    
     res.status(500).json({ message: "Error al enviar el correo", error });
+  
   }
 }
 
