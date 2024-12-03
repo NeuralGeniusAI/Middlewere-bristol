@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
 const obtenerCoordenadas = require("./obtenerCoordenadas");
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 
 dotenv.config();
 
@@ -93,13 +93,19 @@ async function buscarProductos(req, res) {
       filteredData.push({ ...rest, condiciones: filteredCondiciones });
     }
 
-    filteredData.forEach(async (product) => {
-      let infoFiltrada = await filterByPromotions(product);
+    let dataToReturn = await Promise.all(
+      filteredData.map(async (product) => {
+        let infoFiltrada = await filterByPromotions(product);
+        return {
+          ...product,
+          promociones: infoFiltrada,
+        };
+      })
+    );
 
-      console.log("Info filtrada : ", infoFiltrada);
-    });
+    console.log("Data a retornar : ", dataToReturn);
 
-    res.json({ filteredData });
+    res.json({ dataToReturn });
   } catch (error) {
     console.error("Error en buscarProductos:", error.message);
 
@@ -135,7 +141,7 @@ async function filterByPromotions(product) {
     groupedByPromotion[promotion].sort((a, b) => {
       if (a.condicion < b.condicion) return -1;
       if (a.condicion > b.condicion) return 1;
-      return a.cuotas - b.cuotas; // Si las condiciones son iguales, ordenar por número de cuotas
+      return a.cuotas - b.cuotas;
     });
   }
 
