@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
 const obtenerCoordenadas = require("./obtenerCoordenadas");
 const app = express();
-const PORT = 3002;
+const PORT = 3000;
 
 dotenv.config();
 
