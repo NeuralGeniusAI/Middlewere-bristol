@@ -304,10 +304,11 @@ async function enviarEmailConDatosDeCompra(req, res) {
       ${number}. Nombre: ${producto.nombre}
         codigobarra: ${producto.codigobarra} 
         Cantidad: ${producto.cantidad}
-        Precio: ${producto.precio}
-        Tipo de pago: Credito (18 cuotas de ${(producto.precio / 18).toFixed(
-          2
-        )})
+        Precio: ${producto.precio.total}
+        Condicion: ${producto.precio.condicion}
+        Cuotas: ${producto.precio.cuotas}
+        Monto de la cuota: ${producto.precio.monto}
+        precio id: ${producto.precio.id}
       `;
         })
         .join("")}
