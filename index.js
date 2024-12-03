@@ -20,7 +20,6 @@ async function buscarProductos(req, res) {
     }
 
     if (api_key !== apiKey) {
-      console.log({ api_key, apiKey });
       return res.status(401).json({ message: "Api key incorrecta", apiKey });
     }
 
@@ -59,7 +58,7 @@ async function buscarProductos(req, res) {
     const { data } = await response.json();
 
     // Limitar el número de resultados
-    const maxResults = 12;
+    const maxResults = 5;
     const filteredData = [];
     for (const item of data) {
       if (filteredData.length >= maxResults) break;
@@ -96,16 +95,14 @@ async function buscarProductos(req, res) {
     let dataToReturn = await Promise.all(
       filteredData.map(async (product) => {
         let infoFiltrada = await filterByPromotions(product);
-        let condicionesActualizadas = Object.values(infoFiltrada).flat();
 
         return {
           ...product,
-          condiciones: condicionesActualizadas,
+          condiciones: infoFiltrada,
         };
       })
     );
 
-    console.log("Data a retornar : ", dataToReturn);
 
     res.json({ dataToReturn });
   } catch (error) {
@@ -124,79 +121,29 @@ async function buscarProductos(req, res) {
   }
 }
 
-async function filterByPromotions(product) {
-  let groupedByPromotion = {};
-  let conditions = product.condiciones;
+async function filterByPromotions(data) {
 
-  conditions.forEach((condition) => {
-    let promotion = condition.nombrepromocion;
+  const result = {};
 
-    if (!groupedByPromotion[promotion]) {
-      groupedByPromotion[promotion] = [];
-    }
-
-    groupedByPromotion[promotion].push(condition);
-  });
-
-  for (let promotion in groupedByPromotion) {
-    groupedByPromotion[promotion].sort((a, b) => {
-      if (a.condicion < b.condicion) return -1;
-      if (a.condicion > b.condicion) return 1;
-      return a.cuotas - b.cuotas;
+  data.condiciones
+    .filter(condition => [0, 1, 6, 12, 18, 30].includes(condition.cuotas)) // Filtrar por cuotas deseadas
+    .forEach(condition => {
+      const { nombrepromocion, ...rest } = condition; // Extraer nombrepromocion y resto del objeto
+      if (!result[nombrepromocion]) {
+        result[nombrepromocion] = []; // Crear un array si no existe
+      }
+      result[nombrepromocion].push(rest); // Agregar el objeto al array correspondiente
     });
-  }
 
-  return groupedByPromotion;
-}
-
-// async function filterQuotas(filteredData) {
-//   let groupedByPromotion = {};
-
-//   filteredData.forEach((product) => {
-//     let conditions = product.condiciones;
-
-//     conditions.forEach((condition) => {
-//       let promotion = condition.nombrepromocion;
-
-//       if (!groupedByPromotion[promotion]) {
-//         groupedByPromotion[promotion] = [];
-//       }
-
-//       if (!productExists(groupedByPromotion[promotion], product)) {
-//         groupedByPromotion[promotion].push(product);
-
-//       }
-//     });
-//   });
-
-//   return groupedByPromotion;
-// }
-
-function productExists(group, product) {
-  return group.some((existingProduct) => {
-    return (
-      existingProduct.nombre === product.nombre &&
-      existingProduct.precio === product.precio &&
-      areConditionsEqual(existingProduct.condiciones, product.condiciones)
-    );
+  // Ordenar cada array por la propiedad `cuotas`
+  Object.keys(result).forEach(key => {
+    result[key].sort((a, b) => a.cuotas - b.cuotas); // Ordenar de menor a mayor
   });
+
+  return result;
 }
 
-function areConditionsEqual(conditions1, conditions2) {
-  if (conditions1.length !== conditions2.length) return false;
 
-  return conditions1.every((condition1) => {
-    return conditions2.some(
-      (condition2) =>
-        condition1.id === condition2.id &&
-        condition1.condicion === condition2.condicion &&
-        condition1.cuotas === condition2.cuotas &&
-        condition1.monto === condition2.monto &&
-        condition1.total === condition2.total &&
-        condition1.nombrepromocion === condition2.nombrepromocion
-    );
-  });
-}
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -227,7 +174,6 @@ async function enviarEmailConDatosDeCompra(req, res) {
     }
 
     if (api_key !== apiKey) {
-      console.log({ api_key, apiKey });
       return res.status(401).json({ message: "Api key incorrecta", apiKey });
     }
 
@@ -333,7 +279,6 @@ async function enviarEmailConDatosDeCompra(req, res) {
 
     res.status(200).json({ message: "Correo enviado con éxito", info });
   } catch (error) {
-    console.log(error);
     if (
       error === "No se encontraron resultados para la dirección proporcionada."
     ) {
