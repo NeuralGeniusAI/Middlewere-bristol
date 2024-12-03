@@ -96,9 +96,11 @@ async function buscarProductos(req, res) {
     let dataToReturn = await Promise.all(
       filteredData.map(async (product) => {
         let infoFiltrada = await filterByPromotions(product);
+        let condicionesActualizadas = Object.values(infoFiltrada).flat();
+
         return {
           ...product,
-          promociones: infoFiltrada,
+          condiciones: condicionesActualizadas,
         };
       })
     );
@@ -136,7 +138,6 @@ async function filterByPromotions(product) {
     groupedByPromotion[promotion].push(condition);
   });
 
-  // Ordenar las condiciones dentro de cada promoción
   for (let promotion in groupedByPromotion) {
     groupedByPromotion[promotion].sort((a, b) => {
       if (a.condicion < b.condicion) return -1;
