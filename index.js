@@ -3,12 +3,10 @@ const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
 const obtenerCoordenadas = require("./obtenerCoordenadas");
 const app = express();
-const PORT = 3000;
+const PORT = 3002;
 
-// Cargar las variables de entorno
 dotenv.config();
 
-// Middleware para parsear JSON en las solicitudes
 app.use(express.json());
 
 async function buscarProductos(req, res) {
@@ -17,7 +15,6 @@ async function buscarProductos(req, res) {
   const token = process.env.TOKEN;
 
   try {
-    // Validación de API Key
     if (!apiKey) {
       return res.status(401).json({ message: "Api key no proporcionada" });
     }
@@ -47,7 +44,6 @@ async function buscarProductos(req, res) {
       body: JSON.stringify({ token, q: query }),
     };
 
-    // Realizar solicitud a la API externa
     const response = await fetch(
       "https://secure.bristol.com.py:9091/ws_comercial/?buscararticulos",
       options
@@ -97,10 +93,14 @@ async function buscarProductos(req, res) {
       filteredData.push({ ...rest, condiciones: filteredCondiciones });
     }
 
-    // Respuesta exitosa
+    filteredData.forEach(async (product) => {
+      let infoFiltrada = await filterByPromotions(product);
+
+      console.log("Info filtrada : ", infoFiltrada);
+    });
+
     res.json({ filteredData });
   } catch (error) {
-    // Manejo de errores
     console.error("Error en buscarProductos:", error.message);
 
     if (error.name === "FetchError") {
@@ -114,6 +114,81 @@ async function buscarProductos(req, res) {
       error: error.message,
     });
   }
+}
+
+async function filterByPromotions(product) {
+  let groupedByPromotion = {};
+  let conditions = product.condiciones;
+
+  conditions.forEach((condition) => {
+    let promotion = condition.nombrepromocion;
+
+    if (!groupedByPromotion[promotion]) {
+      groupedByPromotion[promotion] = [];
+    }
+
+    groupedByPromotion[promotion].push(condition);
+  });
+
+  // Ordenar las condiciones dentro de cada promoción
+  for (let promotion in groupedByPromotion) {
+    groupedByPromotion[promotion].sort((a, b) => {
+      if (a.condicion < b.condicion) return -1;
+      if (a.condicion > b.condicion) return 1;
+      return a.cuotas - b.cuotas; // Si las condiciones son iguales, ordenar por número de cuotas
+    });
+  }
+
+  return groupedByPromotion;
+}
+
+// async function filterQuotas(filteredData) {
+//   let groupedByPromotion = {};
+
+//   filteredData.forEach((product) => {
+//     let conditions = product.condiciones;
+
+//     conditions.forEach((condition) => {
+//       let promotion = condition.nombrepromocion;
+
+//       if (!groupedByPromotion[promotion]) {
+//         groupedByPromotion[promotion] = [];
+//       }
+
+//       if (!productExists(groupedByPromotion[promotion], product)) {
+//         groupedByPromotion[promotion].push(product);
+
+//       }
+//     });
+//   });
+
+//   return groupedByPromotion;
+// }
+
+function productExists(group, product) {
+  return group.some((existingProduct) => {
+    return (
+      existingProduct.nombre === product.nombre &&
+      existingProduct.precio === product.precio &&
+      areConditionsEqual(existingProduct.condiciones, product.condiciones)
+    );
+  });
+}
+
+function areConditionsEqual(conditions1, conditions2) {
+  if (conditions1.length !== conditions2.length) return false;
+
+  return conditions1.every((condition1) => {
+    return conditions2.some(
+      (condition2) =>
+        condition1.id === condition2.id &&
+        condition1.condicion === condition2.condicion &&
+        condition1.cuotas === condition2.cuotas &&
+        condition1.monto === condition2.monto &&
+        condition1.total === condition2.total &&
+        condition1.nombrepromocion === condition2.nombrepromocion
+    );
+  });
 }
 
 const transporter = nodemailer.createTransport({
@@ -194,10 +269,13 @@ async function enviarEmailConDatosDeCompra(req, res) {
         coordenadas = await obtenerCoordenadas(direccion, "Paraguay");
       }
     } catch (error) {
-      if (error.message === "No se encontraron resultados para la dirección proporcionada.") {
+      if (
+        error.message ===
+        "No se encontraron resultados para la dirección proporcionada."
+      ) {
         return res.status(200).json({ message: error.message, error });
       }
-      throw error; 
+      throw error;
     }
 
     const mailOptions = {
@@ -247,14 +325,14 @@ async function enviarEmailConDatosDeCompra(req, res) {
 
     res.status(200).json({ message: "Correo enviado con éxito", info });
   } catch (error) {
-
     console.log(error);
-    if (error ==='No se encontraron resultados para la dirección proporcionada.') {
-      res.status(500).json({ message:error});
+    if (
+      error === "No se encontraron resultados para la dirección proporcionada."
+    ) {
+      res.status(500).json({ message: error });
     }
-    
+
     res.status(500).json({ message: "Error al enviar el correo", error });
-  
   }
 }
 
