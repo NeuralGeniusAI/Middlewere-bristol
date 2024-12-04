@@ -129,10 +129,10 @@ async function filterByPromotions(data) {
     .filter(condition => [0, 1, 6, 12, 18, 30].includes(condition.cuotas)) // Filtrar por cuotas deseadas
     .forEach(condition => {
       const { nombrepromocion, ...rest } = condition; // Extraer nombrepromocion y resto del objeto
-      if (!result[nombrepromocion]) {
-        result[nombrepromocion] = []; // Crear un array si no existe
+      if (!result["Lista Precio Vigente"]) {
+        result["Lista Precio Vigente"] = []; // Crear un array si no existe
       }
-      result[nombrepromocion].push(rest); // Agregar el objeto al array correspondiente
+      result["Lista Precio Vigente"].push(rest); // Agregar el objeto al array correspondiente
     });
 
   // Ordenar cada array por la propiedad `cuotas`
