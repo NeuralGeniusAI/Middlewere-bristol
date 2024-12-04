@@ -132,7 +132,10 @@ async function filterByPromotions(data) {
       if (!result["Lista Precio Vigente"]) {
         result["Lista Precio Vigente"] = []; // Crear un array si no existe
       }
-      result["Lista Precio Vigente"].push(rest); // Agregar el objeto al array correspondiente
+      if (nombrepromocion === "Lista Precio Vigente") {
+        result["Lista Precio Vigente"].push(rest); // Agregar el objeto al array correspondiente
+      }
+     
     });
 
   // Ordenar cada array por la propiedad `cuotas`
