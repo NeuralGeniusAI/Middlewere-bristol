@@ -1,5 +1,6 @@
 const express = require("express");
 const buscarProductosRoute = require("./routes/buscarProductos");
+const buscarProductoPorIdRoute = require("./routes/buscarProductoPorId");
 const enviarEmailRoute = require("./routes/enviarEmail");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -10,6 +11,7 @@ const PORT = 3000;
 app.use(express.json());
 
 app.use("/buscarProductos", buscarProductosRoute);
+app.use("/buscarProductoPorId", buscarProductoPorIdRoute);
 app.use("/enviarEmail", enviarEmailRoute);
 
 app.listen(PORT, () => {

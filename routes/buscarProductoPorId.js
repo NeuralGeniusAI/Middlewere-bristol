@@ -6,7 +6,7 @@ dotenv.config();
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const { query, apiKey } = req.body;
+  const { query, apiKey, id } = req.body;
   const api_key = process.env.API_KEY;
   const token = process.env.TOKEN;
 
@@ -51,53 +51,58 @@ router.post("/", async (req, res) => {
 
     const { data } = await response.json();
 
-     // Limitar el número de resultados
-     const maxResults = 5;
-     const filteredData = [];
-     for (const item of data) {
+ // Limitar el número de resultados
+ const maxResults = 5;
+ const filteredData = [];
+ for (const item of data) {
 
-       if (filteredData.length >= maxResults) break;
-       const {
-         codigo,
-         categoria,
-         color,
-         modelo,
-         marca,
-         promociones,
-         existenciasdeposito,
-         imagen,
-         existencia,
-         ...rest
-       } = item;
+   if (filteredData.length >= maxResults) break;
+   const {
+     codigo,
+     categoria,
+     color,
+     modelo,
+     marca,
+     promociones,
+     existenciasdeposito,
+     imagen,
+     existencia,
+     ...rest
+   } = item;
 
-       const filteredCondiciones = rest.condiciones.map(
-         ({
-           deposito,
-           idlistaprecio,
-           visible,
-           idcomercialplazo,
-           alcance,
-           mediopago,
-           calificacion,
-           idpromocion,
-           ...restCondicion
-         }) => restCondicion
-       );
-       filteredData.push({ ...rest, condiciones: filteredCondiciones });
-     }
+   const filteredCondiciones = rest.condiciones.map(
+     ({
+       deposito,
+       idlistaprecio,
+       visible,
+       idcomercialplazo,
+       alcance,
+       mediopago,
+       calificacion,
+       idpromocion,
+       ...restCondicion
+     }) => restCondicion
+   );
+   filteredData.push({ ...rest, condiciones: filteredCondiciones });
+ }
 
-     let dataToReturn = await Promise.all(
-       filteredData.map(async (product) => {
-         let infoFiltrada = await filterByPromotions(product);
-         return {
-           ...product,
-           condiciones: infoFiltrada,
-         };
-       })
-     );
+ let dataToReturn = await Promise.all(
+   filteredData.map(async (product) => {
+     let infoFiltrada = await filterByPromotions(product);
+     return {
+       ...product,
+       condiciones: infoFiltrada,
+     };
+   })
+ );
 
-     res.json({ dataToReturn });
+    const product = dataToReturn.find((item) => item.id === id);
 
+    if (!product) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    res.json({ product });
   } catch (error) {
     console.error("Error en buscarProductos:", error.message);
 
