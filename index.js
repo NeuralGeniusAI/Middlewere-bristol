@@ -16,36 +16,31 @@ const urlPromotions =
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 async function validarPromocion(promotionParam) {
-  const options = {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.API_KEY}`,
-    },
-  };
+  try {
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.API_KEY}`,
+      },
+    };
 
-  const response = await fetch(urlPromotions, options);
+    const response = await fetch(urlPromotions, options);
 
-  if (!response.ok) {
-    return res.status(response.status).json({
-      message: "Error en la API externa",
-      status: response.status,
-    });
-  }
-
-  const { data } = await response.json();
-
-  console.log(data);
-
-  let isValid = false;
-
-  data.forEach((promotion, index) => {
-    if (promotion.promocionNombre == promotionParam) {
-      isValid = true;
+    if (!response.ok) {
+      console.error("Error en la API de promociones:", response.status);
+      return false; // Manejar error adecuadamente
     }
-  });
 
-  return isValid;
+    const { data } = await response.json();
+    
+    return data.some(
+      (promotion) => promotion.promocionNombre === promotionParam
+    );
+  } catch (error) {
+    console.error("Error en validarPromocion:", error.message);
+    return false;
+  }
 }
 
 async function buscarProductos(req, res) {
@@ -160,20 +155,23 @@ async function buscarProductos(req, res) {
     });
   }
 }
+
 async function filterByPromotions(product) {
   let groupedByPromotion = {};
   let conditions = product.condiciones;
+  let promotionCache = {}; // Cache para validaciones
 
-  for (let condition of conditions) {
+  for (const condition of conditions) {
     let promotion = condition.nombrepromocion;
 
-    let isValid = await validarPromocion(promotion);
+    if (!(promotion in promotionCache)) {
+      promotionCache[promotion] = await validarPromocion(promotion);
+    }
 
-    if (isValid) {
+    if (promotionCache[promotion]) {
       if (!groupedByPromotion[promotion]) {
         groupedByPromotion[promotion] = [];
       }
-
       groupedByPromotion[promotion].push(condition);
     }
   }
@@ -187,55 +185,6 @@ async function filterByPromotions(product) {
   }
 
   return groupedByPromotion;
-}
-
-// async function filterQuotas(filteredData) {
-//   let groupedByPromotion = {};
-
-//   filteredData.forEach((product) => {
-//     let conditions = product.condiciones;
-
-//     conditions.forEach((condition) => {
-//       let promotion = condition.nombrepromocion;
-
-//       if (!groupedByPromotion[promotion]) {
-//         groupedByPromotion[promotion] = [];
-//       }
-
-//       if (!productExists(groupedByPromotion[promotion], product)) {
-//         groupedByPromotion[promotion].push(product);
-
-//       }
-//     });
-//   });
-
-//   return groupedByPromotion;
-// }
-
-function productExists(group, product) {
-  return group.some((existingProduct) => {
-    return (
-      existingProduct.nombre === product.nombre &&
-      existingProduct.precio === product.precio &&
-      areConditionsEqual(existingProduct.condiciones, product.condiciones)
-    );
-  });
-}
-
-function areConditionsEqual(conditions1, conditions2) {
-  if (conditions1.length !== conditions2.length) return false;
-
-  return conditions1.every((condition1) => {
-    return conditions2.some(
-      (condition2) =>
-        condition1.id === condition2.id &&
-        condition1.condicion === condition2.condicion &&
-        condition1.cuotas === condition2.cuotas &&
-        condition1.monto === condition2.monto &&
-        condition1.total === condition2.total &&
-        condition1.nombrepromocion === condition2.nombrepromocion
-    );
-  });
 }
 
 const transporter = nodemailer.createTransport({
