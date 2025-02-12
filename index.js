@@ -11,7 +11,7 @@ dotenv.config();
 app.use(express.json());
 
 const urlPromotions =
-  "https://secure.bristol.com.py:9094/bristol/api/v2/service/digital/promotions";
+  "https://secure.bristol.com.py/bristol/api/v2/service/chatbot/promotions";
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
