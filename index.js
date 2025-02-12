@@ -33,7 +33,7 @@ async function validarPromocion(promotionParam) {
     }
 
     const { data } = await response.json();
-    
+
     return data.some(
       (promotion) => promotion.promocionNombre === promotionParam
     );
@@ -49,15 +49,6 @@ async function buscarProductos(req, res) {
   const token = process.env.TOKEN;
 
   try {
-    if (!apiKey) {
-      return res.status(401).json({ message: "Api key no proporcionada" });
-    }
-
-    if (api_key !== apiKey) {
-      console.log({ api_key, apiKey });
-      return res.status(401).json({ message: "Api key incorrecta", apiKey });
-    }
-
     if (!query || typeof query !== "string" || query.trim().length === 0) {
       return res
         .status(400)
