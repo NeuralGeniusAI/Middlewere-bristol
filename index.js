@@ -27,12 +27,13 @@ async function validarPromocion(promotionParam) {
 
     const response = await fetch(urlPromotions, options);
 
-    if (!response.ok) {
-      console.error("Error en la API de promociones:", response.status);
-      return false; // Manejar error adecuadamente
-    }
+    // console.log("Promocion por param : ", promotionParam)
 
     const { data } = await response.json();
+
+    console.log("Data de promociones : ", data);
+
+    console.log("Promocion por param : ", promotionParam);
 
     return data.some(
       (promotion) => promotion.promocionNombre === promotionParam
@@ -156,7 +157,11 @@ async function filterByPromotions(product) {
     let promotion = condition.nombrepromocion;
 
     if (!(promotion in promotionCache)) {
-      promotionCache[promotion] = await validarPromocion(promotion);
+      // console.log("Promocion : ", promotion)
+
+      let promotionFormatted = promotion.split('/')[0];
+      
+      promotionCache[promotion] = await validarPromocion(promotionFormatted);
     }
 
     if (promotionCache[promotion]) {
