@@ -31,10 +31,6 @@ async function validarPromocion(promotionParam) {
 
     const { data } = await response.json();
 
-    console.log("Data de promociones : ", data);
-
-    console.log("Promocion por param : ", promotionParam);
-
     return data.some(
       (promotion) => promotion.promocionNombre === promotionParam
     );
@@ -82,6 +78,8 @@ async function buscarProductos(req, res) {
 
     const { data } = await response.json();
 
+    console.log("Data desde Bristol : ", data);
+
     // Limitar el número de resultados
     const maxResults = 12;
     const filteredData = [];
@@ -117,8 +115,12 @@ async function buscarProductos(req, res) {
       filteredData.push({ ...rest, condiciones: filteredCondiciones });
     }
 
+    const filteredWithStock = filteredData.filter(
+      (product) => product.existencia > 0
+    );
+
     let dataToReturn = await Promise.all(
-      filteredData.map(async (product) => {
+      filteredWithStock.map(async (product) => {
         let infoFiltrada = await filterByPromotions(product);
         let condicionesActualizadas = Object.values(infoFiltrada).flat();
 
@@ -129,7 +131,7 @@ async function buscarProductos(req, res) {
       })
     );
 
-    console.log("Data a retornar : ", dataToReturn);
+    // console.log("Data a retornar : ", dataToReturn);
 
     res.json({ dataToReturn });
   } catch (error) {
@@ -159,8 +161,8 @@ async function filterByPromotions(product) {
     if (!(promotion in promotionCache)) {
       // console.log("Promocion : ", promotion)
 
-      let promotionFormatted = promotion.split('/')[0];
-      
+      let promotionFormatted = promotion.split("/")[0];
+
       promotionCache[promotion] = await validarPromocion(promotionFormatted);
     }
 
@@ -336,4 +338,3 @@ app.post("/enviarEmail", enviarEmailConDatosDeCompra);
 app.listen(PORT, () => {
   console.log(`Servidor activo`);
 });
-
