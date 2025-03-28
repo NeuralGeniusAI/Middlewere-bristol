@@ -60,12 +60,19 @@ async function buscarProductos(req, res) {
 
     const options = {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, q: query }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization:
+          "Bearer 32|KZHLJLNBRYitZpbOGdKIiKWQ2HdZaHulkcShuxB8edfe2437",
+      },
+      body: JSON.stringify({
+        token: "s3rvic34cc3ss",
+        search: query,
+      }),
     };
 
     const response = await fetch(
-      "https://secure.bristol.com.py:9091/ws_comercial/?buscararticulos",
+      "https://secure.bristol.com.py/bristol/api/v2/service/chatbot/products",
       options
     );
 
@@ -80,10 +87,12 @@ async function buscarProductos(req, res) {
 
     console.log("Data desde Bristol : ", data);
 
-    // Limitar el número de resultados
     const maxResults = 12;
     const filteredData = [];
-    for (const item of data) {
+
+    const dataArray = Object.values(data); // 🔥 Convertir el objeto a un array
+
+    for (const item of dataArray) {
       if (filteredData.length >= maxResults) break;
 
       const {
